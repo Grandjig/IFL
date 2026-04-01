@@ -1,0 +1,23 @@
+# Source files (compiled to dist/)
+src/
+
+# Test files
+__tests__/
+*.test.ts
+*.spec.ts
+
+# Config files
+tsconfig.json
+vitest.config.ts
+
+# Development files
+.tsbuildinfo
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+
+# Misc
+.DS_Store
+*.log

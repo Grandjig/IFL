@@ -1,0 +1,27 @@
+{
+  "name": "ifl",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Intent-First Layer - Make programmer intent verifiable at runtime",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "cd packages/core && npx vitest run",
+    "test:watch": "vitest --config packages/core/vitest.config.ts",
+    "dev": "tsx watch packages/core/src/index.ts",
+    "clean": "rm -rf packages/*/dist",
+    "typecheck": "tsc --build"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0",
+    "tsx": "^4.7.0",
+    "vitest": "^1.3.0",
+    "ts-morph": "^22.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "@ifl/cli",
+  "version": "0.1.0",
+  "description": "IFL CLI - Command-line tool for intent verification and diagnostics",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "ifl": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "rm -rf dist",
+    "dev": "tsc --build --watch"
+  },
+  "dependencies": {
+    "@ifl/core": "file:../core",
+    "commander": "^12.0.0",
+    "chalk": "^4.1.2"
+  },
+  "keywords": [
+    "cli",
+    "intent",
+    "verification"
+  ],
+  "license": "MIT"
+}

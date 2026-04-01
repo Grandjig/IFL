@@ -1,0 +1,59 @@
+{
+  "name": "@ifl/core",
+  "version": "0.1.0",
+  "description": "Make programmer intent verifiable at runtime",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "rm -rf dist",
+    "dev": "tsc --build --watch"
+  },
+  "keywords": [
+    "typescript",
+    "debugging",
+    "testing",
+    "intent",
+    "contracts",
+    "runtime-verification",
+    "property-based-testing",
+    "postconditions",
+    "preconditions",
+    "design-by-contract"
+  ],
+  "author": "IFL Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "homepage": "",
+  "bugs": {
+    "url": ""
+  },
+  "dependencies": {
+    "fast-check": "^3.15.0",
+    "chalk": "^4.1.2",
+    "reflect-metadata": "^0.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
