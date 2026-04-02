@@ -2,6 +2,14 @@
 
 **IFL makes programmer intent verifiable at runtime — in the code you're already writing, with the tools you're already using.**
 
+![IFL Demo](./demo.gif)
+
+## Installation
+
+```bash
+npm install @ifl/core
+```
+
 ## The Problem
 
 The first 80% of any application builds fast. Modern tools, AI coding assistants, and frameworks make it easy to ship features quickly. But the last 20% is a different universe entirely — a universe of silent semantic bugs that pass all your tests, slip through code review, and surface only when a real user hits that one edge case nobody thought about.
@@ -17,15 +25,14 @@ IFL lets you declare your function's intent as executable specifications directl
 ```typescript
 import { intent, isSorted, sameElements } from '@ifl/core';
 
-@intent({
+const sortNumbers = intent({
   description: 'Sorts an array of numbers in ascending order',
   ensures: (input, output) => isSorted(output) && sameElements(input[0], output),
   handles: [{ when: (arr) => arr.length === 0, returns: [] }],
   onViolation: 'warn'
-})
-function sortNumbers(arr: number[]): number[] {
+})((arr: number[]) => {
   return arr.sort(); // BUG: lexicographic sort
-}
+});
 
 sortNumbers([10, 2, 1]);
 // Output:
@@ -38,13 +45,25 @@ sortNumbers([10, 2, 1]);
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-## Installation
+## Quick Start
 
 ```bash
 npm install @ifl/core
 ```
 
-TypeScript configuration requirements:
+```typescript
+import { intent, isSorted } from '@ifl/core';
+
+const mySort = intent({
+  ensures: (input, output) => isSorted(output)
+})((arr: number[]) => {
+  return [...arr].sort((a, b) => a - b);
+});
+```
+
+## TypeScript Configuration
+
+Add these to your `tsconfig.json`:
 
 ```json
 {
@@ -120,9 +139,9 @@ TypeScript configuration requirements:
 | `isValidShape(obj, schema)` | Object matches type schema |
 | `satisfiesAll(obj, predicates)` | Object satisfies all predicates |
 
-## Verifying AI-Generated Code (The AI Slop Killer)
+## Verifying AI-Generated Code
 
-IFL solves the "AI slop" problem — code that looks correct, passes obvious tests, but fails on edge cases. Instead of reviewing AI-generated code line by line, you write the intent declaration first, then let IFL verify the AI's implementation.
+IFL solves the "AI slop" problem — code that looks correct, passes obvious tests, but fails on edge cases.
 
 ### The Workflow
 
@@ -146,54 +165,16 @@ const result = await aiVerifier.verifyGeneratedCode({
 console.log(result.recommendation); // 'accept' | 'reject' | 'review'
 console.log(result.reasoning);      // Human-readable explanation
 console.log(result.confidence);     // 0-1 confidence score
-console.log(result.violations);     // Array of specific failures
-```
-
-### Example: Catching Subtle AI Bugs
-
-```typescript
-import { aiVerifier, isSorted, sameElements } from '@ifl/core';
-
-const sortIntent = {
-  description: 'Sorts numbers in ascending order',
-  requires: (arr) => Array.isArray(arr) && arr.every(n => typeof n === 'number'),
-  ensures: (input, output) => isSorted(output) && sameElements(input[0], output)
-};
-
-// AI generated this "working" code:
-const aiCode = `
-  function solution(arr) {
-    return [...arr].sort();
-  }
-`;
-
-const result = await aiVerifier.verifyGeneratedCode({
-  code: aiCode,
-  intentDeclaration: sortIntent,
-  functionName: 'solution'
-});
-
-// Result:
-// recommendation: 'reject'
-// reasoning: "The function failed the postcondition on 23 of 100 test inputs.
-//             Most failing input: [10, 2, 1]"
-// violations[0].suggestedFix: "Verify the sort comparator handles numeric comparison"
 ```
 
 ## CLI Usage
 
 ```bash
 # Check all intent declarations in a file
-npx ifl check examples/basic-sort/index.ts
+npx ifl check src/payments.ts
 
-# Check with more runs
+# Check with more fuzz test runs
 npx ifl check src/payments.ts --runs 500
-
-# Filter by tags
-npx ifl check src/ --tags "critical,payments"
-
-# JSON output for CI/CD
-npx ifl check src/ --format json
 
 # Interactive AI code verification
 npx ifl verify --interactive
@@ -203,23 +184,22 @@ npx ifl verify --interactive
 
 | Without IFL | With IFL |
 |-------------|----------|
-| Expired card returns `'completed'` — found in production by user complaint | Expired card returns `'completed'` — caught instantly with full causal trace showing the edge case handler was never triggered |
-| Cart total not recalculated after item removal — silent wrong state for hours, discovered during reconciliation | Cart total invariant violated — caught on the exact state transition that broke it, with suggested fix |
-| AI generates plausible-but-wrong pagination logic — ships to prod, corrupts user data | AI code runs against intent declaration — rejected before merge with specific failing inputs |
-| "It worked on my machine" — bug only manifests with specific input patterns | Fuzz testing catches the failing pattern automatically with 100 random inputs |
-| Debugging session: 2 hours reading logs | Violation report: 2 seconds reading causal chain |
+| Expired card returns `'completed'` — found in production by user complaint | Expired card returns `'completed'` — caught instantly with full causal trace |
+| Cart total not recalculated after item removal — silent wrong state for hours | Cart total invariant violated — caught on the exact state transition |
+| AI generates plausible-but-wrong pagination logic — ships to prod | AI code runs against intent declaration — rejected before merge |
+| "It worked on my machine" — bug only manifests with specific inputs | Fuzz testing catches the failing pattern automatically |
 
 ## Configuration
 
 ### Sampling Rate
 
-In development, IFL checks every function call by default (`samplingRate: 1.0`). In production, it samples 1% of calls (`samplingRate: 0.01`) to minimize overhead while still catching violations.
+In development, IFL checks every function call by default (`samplingRate: 1.0`). In production, it samples 1% of calls (`samplingRate: 0.01`) to minimize overhead.
 
 ```typescript
-@intent({
+const fn = intent({
   ensures: (input, output) => output.isValid,
   samplingRate: process.env.NODE_ENV === 'production' ? 0.001 : 1.0
-})
+})((data) => process(data));
 ```
 
 ### Violation Handling Modes
@@ -231,22 +211,11 @@ In development, IFL checks every function call by default (`samplingRate: 1.0`).
 | `'log'` | `console.log` with formatted report | Production monitoring |
 | `(violation) => void` | Custom handler function | Logging services, alerting |
 
-```typescript
-@intent({
-  ensures: ...,
-  onViolation: (violation) => {
-    Sentry.captureException(new Error('Intent violation'), {
-      extra: violation
-    });
-  }
-})
-```
-
 ## Philosophy
 
 A programming language tells you what happened. A stack trace tells you where it happened. But neither tells you what was *supposed* to happen. IFL bridges that gap by making programmer intent a first-class, executable artifact.
 
-The gap between "what happened" and "what was supposed to happen" is where all the hard bugs live — the ones that pass tests, survive code review, and surface only in production. IFL doesn't eliminate that gap, but it makes it visible, measurable, and catchable.
+The gap between "what happened" and "what was supposed to happen" is where all the hard bugs live.
 
 ## License
 
